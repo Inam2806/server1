@@ -14,6 +14,7 @@ app.use(express.json());
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('Connected to MongoDB'))
     .catch(err => console.error('Failed to connect to MongoDB:', err));
+
 const Registration = mongoose.model('Registration', new mongoose.Schema({
     username: String,
     email: String,
@@ -32,10 +33,29 @@ app.post('/api/auth/register', async (req, res) => {
     try {
         const { username, email, password, companyCode } = req.body;
 
-        // Your existing validation and error handling code
+        // Validation for username  
+        if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(username)) {
+            return res.status(400).json({ message: "Username must contain at least one letter and one number, and be at least 6 characters long" });
+        }
+
+        // Validation for password
+        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+])[A-Za-z\d!@#$%^&*()_+]{8,}/.test(password)) {
+            return res.status(400).json({ message: "Password must contain at least one lowercase letter, one uppercase letter, one digit, one special character, and be at least 8 characters long" });
+        }
+
+        // Check if username or email is already taken
+        const existingUser = await Registration.findOne({ $or: [{ username }, { email }] });
+        if (existingUser) {
+            if (existingUser.username === username) {
+                return res.status(400).json({ message: "Username is already taken" });
+            }
+            if (existingUser.email === email) {
+                return res.status(400).json({ message: "Email is already taken" });
+            }
+        }
 
         // Verify company code from MongoDB
-        const company = await Company.findOne({ company_code: companyCode }).lean(); // Use lean() to optimize query performance
+        const company = await Company.findOne({ company_code: companyCode });
         if (!company) {
             return res.status(400).json({ message: "Invalid company code" });
         }
@@ -53,7 +73,6 @@ app.post('/api/auth/register', async (req, res) => {
         return res.status(500).json({ message: "Registration failed", error: error.message });
     }
 });
-
 // Endpoint to handle user login
 app.post('/api/auth/login', async (req, res) => {
   try {
