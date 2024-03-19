@@ -33,7 +33,7 @@ app.post('/api/auth/register', async (req, res) => {
     try {
         const { username, email, password, companyCode } = req.body;
 
-        // Validation for username
+        // Validation for username  
         if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(username)) {
             return res.status(400).json({ message: "Username must contain at least one letter and one number, and be at least 6 characters long" });
         }
@@ -105,5 +105,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(500).json({ message: "Login failed", error: error.message });
   }
 });
-
+app.get('/', (req, res) => {
+  res.send('Welcome to the authentication API!');
+});
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
