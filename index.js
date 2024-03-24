@@ -68,15 +68,7 @@
         const registration = new Registration({ username, email, password: hashedPassword, companyCode });
         await registration.save();
     
-        // Create new collection with company name
-        const db = mongoose.connection.db;
-        const companyName = company.company_name.replace(/s$/i, ''); // Remove the trailing 's' from the company name
-        await db.createCollection(companyName, (err, collection) => {
-            if (err) {
-            console.log(`Collection ${companyName} already exists.`);
-            }
-            console.log(`Collection ${companyName} created.`);
-        });
+      
     
         return res.status(201).json({ message: "User registered successfully" });
     
@@ -164,6 +156,49 @@
             return res.status(500).json({ message: "Profile retrieval failed", error: error.message });
         }
     });
+// Endpoint to add product
+app.post('/api/products/add', async (req, res) => {
+    try {
+        const { companyName, productCode, status } = req.body;
+
+        // Check if the company exists
+        const company = await Company.findOne({ company_name: companyName }).lean();
+        if (!company) {
+            return res.status(404).json({ message: "Company not found" });
+        }
+
+        // Create new collection with company name if not exists
+        const db = mongoose.connection.db;
+        const collectionName = companyName.replace(/s$/i, ''); // Remove the trailing 's' from the company name
+        await db.createCollection(collectionName, (err, collection) => {
+            if (err) {
+                console.log(`Collection ${collectionName} already exists.`);
+            }
+            console.log(`Collection ${collectionName} created.`);
+        });
+
+        // Check if product code already exists in the collection
+        const ProductModel = mongoose.model(collectionName, new mongoose.Schema({
+            productCode: String,
+            status: String
+        }));
+        const existingProduct = await ProductModel.findOne({ productCode }).lean();
+        if (existingProduct) {
+            return res.status(400).json({ message: "Product code already exists" });
+        }
+
+        // Save product to the collection
+        const product = new ProductModel({ productCode, status });
+        await product.save();
+
+        return res.status(201).json({ message: "Product added successfully" });
+    } catch (error) {
+        console.error('Adding product failed:', error);
+        return res.status(500).json({ message: "Adding product failed", error: error.message });
+    }
+});
+
+
 
         app.get('/', (req, res) => {
         res.send('Welcome to the authentication API!');
