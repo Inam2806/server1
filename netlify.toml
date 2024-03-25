@@ -1,6 +1,6 @@
 [build]
   base = "."
-  command = "./server/index.js && cd .. && npm run build:prod"
+  command = "./index.js && npm run build:prod"
   publish = "client/main"
 
 [[redirects]]
@@ -9,4 +9,4 @@
   status = 200
 
 [context.production]
-  command = "./server/index.js && cd .. && npm run build:prod"
+  command = "./index.js && npm run build:prod"
