@@ -1,12 +1,12 @@
 [build]
-  base = "."
-  command = "./index.js && npm run build:prod"
-  publish = "client/main"
+  command = "npm install && npm run build" # Change this command according to your build process
+  publish = "."  # Change this to the directory containing your built files
+
+[dev]
+  command = "npm run start"  # Change this command to start your development server
+  port = 5000  # Change this to the port your development server uses
 
 [[redirects]]
   from = "/*"
-  to = "/api/:splat"
+  to = "/index.html"
   status = 200
-
-[context.production]
-  command = "./index.js && npm run build:prod"
