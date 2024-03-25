@@ -156,51 +156,91 @@
             return res.status(500).json({ message: "Profile retrieval failed", error: error.message });
         }
     });
-// Endpoint to add product
-app.post('/api/products/add', async (req, res) => {
+// Create a base mongoose schema
+const productSchema = new mongoose.Schema({
+    productCode: String,
+    status: { type: Number, default: 0 },
+  });
+  
+  // Create a function to generate model discriminators
+  const createProductModel = (companyName) => {
+    return mongoose.model(companyName, productSchema);
+  };
+  
+  // API endpoint to add a product
+  app.post('/api/products/add', async (req, res) => {
+    const { companyName, productCode } = req.body;
+  
     try {
-        const { companyName, productCode, status } = req.body;
-
-        // Check if the company exists
-        const company = await Company.findOne({ company_name: companyName }).lean();
-        if (!company) {
-            return res.status(404).json({ message: "Company not found" });
-        }
-
-        // Create new collection with company name if not exists
-        const db = mongoose.connection.db;
-        const collectionName = companyName.replace(/s$/i, ''); // Remove the trailing 's' from the company name
-        await db.createCollection(collectionName, (err, collection) => {
-            if (err) {
-                console.log(`Collection ${collectionName} already exists.`);
-            }
-            console.log(`Collection ${collectionName} created.`);
-        });
-
-        // Check if product code already exists in the collection
-        const ProductModel = mongoose.model(collectionName, new mongoose.Schema({
-            productCode: String,
-            status: String
-        }));
-        const existingProduct = await ProductModel.findOne({ productCode }).lean();
-        if (existingProduct) {
-            return res.status(400).json({ message: "Product code already exists" });
-        }
-
-        // Save product to the collection
-        const product = new ProductModel({ productCode, status });
-        await product.save();
-
-        return res.status(201).json({ message: "Product added successfully" });
+      // Get or create the model based on companyName
+      const Product = createProductModel(companyName);
+  
+      // Create a new product instance
+      const newProduct = new Product({
+        productCode,
+        status: 0,
+      });
+  
+      // Save the product to the database
+      await newProduct.save();
+  
+      res.status(200).json({ message: 'Product added successfully' });
     } catch (error) {
-        console.error('Adding product failed:', error);
-        return res.status(500).json({ message: "Adding product failed", error: error.message });
+      console.error('Error adding product:', error);
+      res.status(500).json({ error: 'Failed to add product' });
+    }
+  });
+//Retailer part
+// Endpoint to handle retailer registration
+app.post('/api/auth/retailer_register', async (req, res) => {
+    try {
+        const { username, email, password, retailerCode } = req.body;
+
+        // Validation for username  
+        if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(username)) {
+            return res.status(400).json({ message: "Username must contain at least one letter and one number, and be at least 6 characters long" });
+        }
+
+        // Validation for password
+        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+])[A-Za-z\d!@#$%^&*()_+]{8,}/.test(password)) {
+            return res.status(400).json({ message: "Password must contain at least one lowercase letter, one uppercase letter, one digit, one special character, and be at least 8 characters long" });
+        }
+
+        // Check if username or email is already taken
+        const existingUser = await Registration.findOne({ $or: [{ username }, { email }] });
+        if (existingUser) {
+            if (existingUser.username === username) {
+                return res.status(400).json({ message: "Username is already taken" });
+            }
+            if (existingUser.email === email) {
+                return res.status(400).json({ message: "Email is already taken" });
+            }
+        }
+
+        // Verify retailer code from MongoDB
+        const retailer = await Retailer.findOne({ retailer_code: retailerCode }).lean(); // Use lean() to optimize query performance
+        if (!retailer) {
+            return res.status(400).json({ message: "Invalid retailer code" });
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Save registration data to Registration collection
+        const registration = new Registration({ username, email, password: hashedPassword, retailerCode });
+        await registration.save();
+
+        return res.status(201).json({ message: "Retailer registered successfully" });
+
+    } catch (error) {
+        console.error('Retailer registration failed: ', error);
+        return res.status(500).json({ message: "Retailer registration failed", error: error.message });
     }
 });
 
 
 
-        app.get('/', (req, res) => {
-        res.send('Welcome to the authentication API!');
-        });
-        app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+app.get('/', (req, res) => {
+    res.send('Welcome to the authentication API!');
+});
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
