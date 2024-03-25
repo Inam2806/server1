@@ -1,4 +1,18 @@
 [build]
-  base = "server"
-  publish = "server/build"
-  command = "npm run build"
+  base = "."
+  publish = "client/main"
+  command = "cd server && npm run build && cd .."
+
+[build.processing]
+  skip_processing = true
+
+[[redirects]]
+  from = "/*"
+  to = "/api/:splat"
+  status = 200
+
+[context.production]
+  command = "cd server && npm run build:prod && cd .."
+
+[context.production.processing]
+  skip_processing = false
