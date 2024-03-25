@@ -1,4 +1,4 @@
 [build]
+  base = "server"
+  publish = "server/build"
   command = "npm run build"
-  publish = "build"
-   include = ["netlify.toml", ".env"]
