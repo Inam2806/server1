@@ -1,7 +1,7 @@
 [build]
   base = "."
   publish = "client/main"
-  command = "cd server && npm run build && cd .."
+  command = "cd /opt/build/repo/server && npm run build:prod"
 
 [build.processing]
   skip_processing = true
@@ -12,7 +12,7 @@
   status = 200
 
 [context.production]
-  command = "cd server && npm run build:prod && cd .."
+  command = "cd /opt/build/repo/server && npm run build:prod"
 
 [context.production.processing]
   skip_processing = false
