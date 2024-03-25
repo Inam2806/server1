@@ -1,10 +1,7 @@
 [build]
   base = "."
+  command = "./server/ && npm run build:prod && cd .."
   publish = "client/main"
-  command = "cd /opt/build/repo/server && npm run build:prod"
-
-[build.processing]
-  skip_processing = true
 
 [[redirects]]
   from = "/*"
@@ -12,7 +9,4 @@
   status = 200
 
 [context.production]
-  command = "cd /opt/build/repo/server && npm run build:prod"
-
-[context.production.processing]
-  skip_processing = false
+  command = "./server/ && npm run build:prod && cd .."
